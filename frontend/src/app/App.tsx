@@ -7,6 +7,7 @@ import { registerSW } from 'virtual:pwa-register'
 import { navigation, groupLabels, mobileNavigation, type PageKey } from './navigation'
 import { StatusPill } from '../components/StatusPill'
 import { Dashboard } from '../features/dashboard/Dashboard'
+import { InventoryPage } from '../features/inventory/InventoryPage'
 import { LoginPreview } from '../features/auth/LoginPreview'
 import { ModulePlaceholder } from '../features/placeholder/ModulePlaceholder'
 
@@ -177,6 +178,8 @@ export default function App() {
               </div>
               {activePage === 'dashboard' ? (
                 <Dashboard />
+              ) : activePage === 'inventory' ? (
+                <InventoryPage />
               ) : (
                 <ModulePlaceholder
                   title={selectedItem.label}
