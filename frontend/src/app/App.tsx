@@ -8,6 +8,7 @@ import { navigation, groupLabels, mobileNavigation, type PageKey } from './navig
 import { StatusPill } from '../components/StatusPill'
 import { Dashboard } from '../features/dashboard/Dashboard'
 import { InventoryPage } from '../features/inventory/InventoryPage'
+import { WarehousePage } from '../features/warehouse/WarehousePage'
 import { LoginPreview } from '../features/auth/LoginPreview'
 import { ModulePlaceholder } from '../features/placeholder/ModulePlaceholder'
 
@@ -177,18 +178,20 @@ export default function App() {
                 <div className="flex items-center gap-2 text-[11px] text-slate-400"><Command size={13} /> Foundation preview · No live data connected</div>
               </div>
               {activePage === 'dashboard' ? (
-                <Dashboard />
-              ) : activePage === 'inventory' ? (
-                <InventoryPage />
-              ) : (
-                <ModulePlaceholder
-                  title={selectedItem.label}
-                  titleMy={selectedItem.labelMy}
-                  description={descriptions[activePage]}
-                  icon={selectedItem.icon}
-                />
-              )}
-            </div>
+              <Dashboard />
+            ) : activePage === 'inventory' ? (
+              <InventoryPage />
+            ) : activePage === 'warehouse' ? (
+              <WarehousePage />
+            ) : (
+              <ModulePlaceholder
+                title={selectedItem.label}
+                titleMy={selectedItem.labelMy}
+                description={descriptions[activePage]}
+                icon={selectedItem.icon}
+              />
+            )}
+          </div>
           </main>
 
           <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-slate-200 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 backdrop-blur lg:hidden">
