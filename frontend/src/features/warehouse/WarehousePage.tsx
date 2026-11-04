@@ -53,14 +53,9 @@ function LocationForm({ onClose, onSave }: { onClose: () => void; onSave: (input
   }
 
   return (
-    <ModalFrame title="Add location and warehouse" subtitle="Create a main warehouse or branch and its first storage location. This does not add stock." onClose={onClose}>
+    <ModalFrame title="Add shop branch" subtitle="Create a shop branch and its first stock location. This does not add stock." onClose={onClose}>
       <form className="space-y-4" onSubmit={submit}>
-        <label className={labelClass}>Location type *
-          <select className={inputClass} name="type" defaultValue="BRANCH">
-            <option value="MAIN_WAREHOUSE">Main warehouse</option>
-            <option value="BRANCH">Branch</option>
-          </select>
-        </label>
+        <input type="hidden" name="type" value="BRANCH" />
         <div className="grid gap-3 sm:grid-cols-2">
           <label className={labelClass}>Location code *<input className={inputClass} name="code" required maxLength={24} placeholder="e.g. BR01 or MAIN" /></label>
           <label className={labelClass}>Location name *<input className={inputClass} name="name" required maxLength={80} placeholder="e.g. Branch A" /></label>
@@ -117,7 +112,7 @@ export function WarehousePage() {
       </div>
 
       <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
-        <div className="flex items-start gap-3"><Warehouse size={19} className="mt-0.5 shrink-0 text-blue-700" /><div><p className="text-sm font-bold text-blue-950">Location setup only</p><p className="mt-1 text-xs leading-5 text-blue-800">A location is a branch or main warehouse with at least one warehouse record. Creating it does not increase stock. Stock movements will be recorded separately in the next inventory step.</p></div></div>
+        <div className="flex items-start gap-3"><Warehouse size={19} className="mt-0.5 shrink-0 text-blue-700" /><div><p className="text-sm font-bold text-blue-950">Location setup only</p><p className="mt-1 text-xs leading-5 text-blue-800">Each shop branch has its own stock location. Creating it does not increase stock. Creating it does not increase stock. Stock movements will be recorded separately in the next inventory step.</p></div></div>
       </div>
 
       {(notice || error) && <div role="status" className={`flex items-start gap-2 rounded-xl border p-3 text-xs leading-5 ${error ? 'border-rose-100 bg-rose-50 text-rose-700' : 'border-emerald-100 bg-emerald-50 text-emerald-700'}`}><CheckCircle2 size={16} className="mt-0.5 shrink-0" /><div className="flex-1">{error || notice}</div><button type="button" aria-label="Dismiss message" onClick={() => { setNotice(''); setError('') }}><X size={14} /></button></div>}
@@ -128,7 +123,7 @@ export function WarehousePage() {
           <button type="button" className={secondaryButton} onClick={() => void reload()}>Refresh list</button>
         </div>
         {loading ? <p className="py-10 text-center text-sm text-slate-500">Loading locations…</p> : activeLocations.length === 0 ? (
-          <div className="flex flex-col items-center py-10 text-center"><span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-500"><Warehouse size={22} /></span><p className="mt-3 text-sm font-bold text-slate-800">No locations configured</p><p className="mt-1 max-w-md text-xs leading-5 text-slate-400">Start with your Main Warehouse and Branch A. Each location needs a unique code and at least one warehouse.</p><button type="button" className={`${primaryButton} mt-4`} onClick={() => setDialogOpen(true)}><Plus size={15} /> Set up first location</button></div>
+          <div className="flex flex-col items-center py-10 text-center"><span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-500"><Warehouse size={22} /></span><p className="mt-3 text-sm font-bold text-slate-800">No locations configured</p><p className="mt-1 max-w-md text-xs leading-5 text-slate-400">Start by creating Shop 1 and Shop 2. Each shop needs a unique branch code and its first stock location.</p><button type="button" className={`${primaryButton} mt-4`} onClick={() => setDialogOpen(true)}><Plus size={15} /> Set up first location</button></div>
         ) : (
           <div className="space-y-3">
             {activeLocations.map(({ branch, warehouses }) => (

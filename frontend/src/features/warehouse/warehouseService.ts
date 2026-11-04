@@ -1,5 +1,6 @@
 import { db } from '../../data/local'
 import type {
+  AuditAction,
   AuditLogRecord,
   BranchRecord,
   BranchType,
@@ -146,4 +147,161 @@ export async function createLocation(input: CreateLocationInput): Promise<Locati
   })
 
   return { branch, warehouses: [warehouse] }
+}
+
+
+export interface UpdateLocationInput {
+  id: string
+  code: string
+  name: string
+}
+
+export interface UpdateWarehouseInput {
+  id: string
+  code: string
+  name: string
+}
+
+function makeMutationAudit(
+  entityType: string,
+  entityId: string,
+  action: AuditAction,
+  before: Record<string, unknown>,
+  after: Record<string, unknown>,
+  reason: string,
+): AuditLogRecord {
+  const now = new Date().toISOString()
+  return {
+    id: createId('audit'),
+    entityType,
+    entityId,
+    action,
+    actorId: LOCAL_LOCATION_ACTOR_ID,
+    deviceId: 'LOCAL_DEVICE_UNREGISTERED',
+    occurredAt: now,
+    recordedAt: now,
+    before,
+    after,
+    reason,
+  }
+}
+
+/** Edits a location without replacing its ID or removing historical stock references. */
+export async function updateLocation(input: UpdateLocationInput): Promise<void> {
+  const code = normalizeCode(input.code)
+  const name = input.name.trim()
+  if (!code || !name) throw new Error('Branch code and name are required.')
+
+  await db.transaction('rw', db.branches, db.auditLogs, db.syncOutbox, async () => {
+    const before = await db.branches.get(input.id)
+    if (!before) throw new Error('Branch was not found.')
+    const duplicate = await db.branches.where('code').equals(code).first()
+    if (duplicate && duplicate.id !== input.id) throw new Error(`Branch code ${code} is already in use.`)
+
+    const after: BranchRecord = {
+      ...before,
+      code,
+      name,
+      type: 'BRANCH',
+      updatedAt: new Date().toISOString(),
+    }
+    if (before.code === after.code && before.name === after.name && before.type === 'BRANCH') return
+
+    await db.branches.put(after)
+    await db.auditLogs.add(makeMutationAudit(
+      'BRANCH', before.id, 'UPDATE', { ...before }, { ...after },
+      'Updated branch details; legacy main-warehouse type is normalized to shop branch',
+    ))
+    await db.syncOutbox.add(makeOutbox('BRANCH', after.id, 'UPDATE', { branch: after }))
+  })
+}
+
+/** Edits a warehouse code/name while keeping its branch relationship and ID unchanged. */
+export async function updateWarehouse(input: UpdateWarehouseInput): Promise<void> {
+  const code = normalizeCode(input.code)
+  const name = input.name.trim()
+  if (!code || !name) throw new Error('Warehouse code and name are required.')
+
+  await db.transaction('rw', db.warehouses, db.auditLogs, db.syncOutbox, async () => {
+    const before = await db.warehouses.get(input.id)
+    if (!before) throw new Error('Warehouse was not found.')
+    const duplicate = await db.warehouses.where('code').equals(code).first()
+    if (duplicate && duplicate.id !== input.id) throw new Error(`Warehouse code ${code} is already in use.`)
+
+    const after: WarehouseRecord = {
+      ...before,
+      code,
+      name,
+      updatedAt: new Date().toISOString(),
+    }
+    if (before.code === after.code && before.name === after.name) return
+
+    await db.warehouses.put(after)
+    await db.auditLogs.add(makeMutationAudit(
+      'WAREHOUSE', before.id, 'UPDATE', { ...before }, { ...after },
+      'Updated warehouse details',
+    ))
+    await db.syncOutbox.add(makeOutbox('WAREHOUSE', after.id, 'UPDATE', { warehouse: after }))
+  })
+}
+
+/**
+ * Uses soft archive only. A location with stock movement history cannot be archived,
+ * because its ID is referenced by the append-only stock ledger.
+ */
+export async function setLocationArchived(branchId: string, archived: boolean): Promise<void> {
+  await db.transaction(
+    'rw',
+    db.branches, db.warehouses, db.stockLedger, db.auditLogs, db.syncOutbox,
+    async () => {
+      const beforeBranch = await db.branches.get(branchId)
+      if (!beforeBranch) throw new Error('Branch was not found.')
+      const warehouses = await db.warehouses.where('branchId').equals(branchId).toArray()
+      const targetStatus = archived ? 'ARCHIVED' : 'ACTIVE'
+
+      if (beforeBranch.status === targetStatus) return
+      if (archived) {
+        const movementCount = await db.stockLedger.where('branchId').equals(branchId).count()
+        if (movementCount > 0) {
+          throw new Error('This branch has stock movement history. Move or reconcile stock first; historical branches cannot be archived.')
+        }
+      }
+
+      const now = new Date().toISOString()
+      const afterBranch: BranchRecord = {
+        ...beforeBranch,
+        status: targetStatus,
+        type: 'BRANCH',
+        updatedAt: now,
+      }
+      await db.branches.put(afterBranch)
+      await db.auditLogs.add(makeMutationAudit(
+        'BRANCH', branchId, archived ? 'ARCHIVE' : 'RESTORE',
+        { ...beforeBranch }, { ...afterBranch },
+        archived ? 'Soft archived branch setup record' : 'Restored branch setup record',
+      ))
+      await db.syncOutbox.add(makeOutbox(
+        'BRANCH', branchId, archived ? 'ARCHIVE' : 'UPDATE', { branch: afterBranch },
+      ))
+
+      for (const beforeWarehouse of warehouses) {
+        if (beforeWarehouse.status === targetStatus) continue
+        const afterWarehouse: WarehouseRecord = {
+          ...beforeWarehouse,
+          status: targetStatus,
+          updatedAt: now,
+        }
+        await db.warehouses.put(afterWarehouse)
+        await db.auditLogs.add(makeMutationAudit(
+          'WAREHOUSE', beforeWarehouse.id, archived ? 'ARCHIVE' : 'RESTORE',
+          { ...beforeWarehouse }, { ...afterWarehouse },
+          archived ? 'Branch archived; warehouse soft archived' : 'Branch restored; warehouse restored',
+        ))
+        await db.syncOutbox.add(makeOutbox(
+          'WAREHOUSE', beforeWarehouse.id, archived ? 'ARCHIVE' : 'UPDATE',
+          { warehouse: afterWarehouse },
+        ))
+      }
+    },
+  )
 }
