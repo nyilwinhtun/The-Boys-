@@ -320,3 +320,61 @@ export async function archiveProduct(productId: string, actorId = LOCAL_SETUP_AC
     }
   })
 }
+
+/** Restores an archived product and its archived variants without changing stock. */
+export async function restoreProduct(productId: string, actorId = LOCAL_SETUP_ACTOR_ID): Promise<void> {
+  await db.transaction('rw', db.products, db.variants, db.auditLogs, db.syncOutbox, async () => {
+    const product = await db.products.get(productId)
+    if (!product) throw new Error('Product was not found.')
+    if (product.status === 'ACTIVE') return
+
+    const now = new Date().toISOString()
+    const restoredProduct: ProductRecord = {
+      ...product,
+      status: 'ACTIVE',
+      updatedAt: now,
+      updatedBy: actorId,
+    }
+
+    await db.products.put(restoredProduct)
+    await db.auditLogs.add(
+      makeAudit(
+        'PRODUCT',
+        product.id,
+        'RESTORE',
+        actorId,
+        { ...product },
+        { ...restoredProduct },
+        'Restored to the local product catalogue',
+      ),
+    )
+    await db.syncOutbox.add(makeOutbox('PRODUCT', product.id, 'UPDATE', { product: restoredProduct }))
+
+    const variants = await db.variants.where('productId').equals(productId).toArray()
+    for (const variant of variants) {
+      if (variant.status !== 'ARCHIVED') continue
+
+      const restoredVariant: ProductVariantRecord = {
+        ...variant,
+        status: 'ACTIVE',
+        updatedAt: now,
+        updatedBy: actorId,
+      }
+
+      await db.variants.put(restoredVariant)
+      await db.auditLogs.add(
+        makeAudit(
+          'PRODUCT_VARIANT',
+          variant.id,
+          'RESTORE',
+          actorId,
+          { ...variant },
+          { ...restoredVariant },
+          'Parent product restored',
+        ),
+      )
+      await db.syncOutbox.add(makeOutbox('VARIANT', variant.id, 'UPDATE', { variant: restoredVariant }))
+    }
+  })
+}
+

@@ -23,7 +23,7 @@ export type SyncStatus =
   | 'CONFLICT'
   | 'NEEDS_REVIEW'
 
-export type AuditAction = 'CREATE' | 'UPDATE' | 'ARCHIVE' | 'APPROVE' | 'REJECT' | 'APPEND' | 'VOID'
+export type AuditAction = 'CREATE' | 'UPDATE' | 'ARCHIVE' | 'RESTORE' | 'APPROVE' | 'REJECT' | 'APPEND' | 'VOID'
 export type SyncEntityType = 'PRODUCT' | 'VARIANT' | 'IMEI_UNIT' | 'STOCK_LEDGER' | 'AUDIT_LOG' | 'BRANCH' | 'WAREHOUSE'
 export type SyncOperation = 'CREATE' | 'UPDATE' | 'ARCHIVE' | 'APPEND'
 

@@ -6,7 +6,7 @@ import {
 import { db } from '../../data/local'
 import type { CostingMethod, ProductRecord, ProductVariantRecord, TrackingMode } from '../../data/local'
 import {
-  archiveProduct, createProduct, createVariant, LOCAL_SETUP_ACTOR_ID,
+  archiveProduct, createProduct, createVariant, LOCAL_SETUP_ACTOR_ID, restoreProduct,
   updateProduct, updateVariant, type ProductDraft, type ProductUpdateDraft, type VariantDraft,
 } from './catalogueService'
 
@@ -235,6 +235,19 @@ export function InventoryPage() {
     }
   }
 
+  async function handleRestore(product: ProductRecord) {
+    const confirmed = window.confirm(`Restore ${product.name} (${product.sku}) to the active catalogue? Its archived variants will also be restored. Stock quantities will not change.`)
+    if (!confirmed) return
+    try {
+      await restoreProduct(product.id, LOCAL_SETUP_ACTOR_ID)
+      setNotice('Product and its archived variants restored. Stock quantities were not changed.')
+      setQuery('')
+      setShowArchived(false)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not restore this product.')
+    }
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
@@ -277,7 +290,16 @@ export function InventoryPage() {
                     <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                       <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${product.trackingMode === 'IMEI' ? 'bg-violet-50 text-violet-700' : 'bg-blue-50 text-blue-700'}`}>{product.trackingMode === 'IMEI' ? 'IMEI tracked' : 'Quantity tracked'}</span>
                       <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">{productVariants.length} variants</span>
-                      {!showArchived && <><button type="button" className={secondaryButton} onClick={() => setDialog({ kind: 'product', product })}><Edit3 size={13} /> Edit</button><button type="button" className={`${secondaryButton} text-rose-600 hover:bg-rose-50`} onClick={() => void handleArchive(product)}><Archive size={13} /> Archive</button></>}
+                      {!showArchived ? (
+                        <>
+                          <button type="button" className={secondaryButton} onClick={() => setDialog({ kind: 'product', product })}><Edit3 size={13} /> Edit</button>
+                          <button type="button" className={`${secondaryButton} text-rose-600 hover:bg-rose-50`} onClick={() => void handleArchive(product)}><Archive size={13} /> Archive</button>
+                        </>
+                      ) : (
+                        <button type="button" className={`${secondaryButton} border-emerald-200 text-emerald-700 hover:bg-emerald-50`} onClick={() => void handleRestore(product)}>
+                          <CheckCircle2 size={13} /> Restore
+                        </button>
+                      )}
                     </div>
                   </div>
                   {expanded && <div className="border-t border-slate-100 bg-slate-50/70 p-3 sm:p-4"><div className="mb-3 flex items-center justify-between gap-2"><p className="text-xs font-bold text-slate-700">Product variants</p>{!showArchived && <button type="button" className={secondaryButton} onClick={() => setDialog({ kind: 'variant', product })}><Plus size={13} /> Add variant</button>}</div>
