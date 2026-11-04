@@ -2,6 +2,7 @@ import {
   ArrowDownRight, ArrowUpRight, Boxes, CircleDollarSign, Clock3,
   PackageSearch, Plus, RefreshCw, ShoppingBag, Truck,
 } from 'lucide-react'
+import { LocalDatabaseStatus } from '../system/LocalDatabaseStatus'
 
 const metrics = [
   { label: 'Today sales', value: '—', note: 'Connect sales data in a later phase', icon: CircleDollarSign },
@@ -59,9 +60,7 @@ export function Dashboard() {
             <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">No live data</span>
           </div>
           <div className="mt-6 flex h-52 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-5 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm">
-              <ShoppingBag size={21} />
-            </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm"><ShoppingBag size={21} /></div>
             <p className="mt-3 text-sm font-semibold text-slate-700">Your sales chart will be displayed here</p>
             <p className="mt-1 max-w-sm text-xs leading-5 text-slate-400">This preview does not use sample sales figures. Real totals will be connected to approved sales transactions.</p>
           </div>
@@ -69,18 +68,15 @@ export function Dashboard() {
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/40">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-bold text-slate-900">System readiness</h2>
-              <p className="mt-1 text-xs text-slate-500">Foundation stage</p>
-            </div>
-            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">Phase 1</span>
+            <div><h2 className="font-bold text-slate-900">System readiness</h2><p className="mt-1 text-xs text-slate-500">Foundation stage</p></div>
+            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">Phase 2.1</span>
           </div>
           <div className="mt-5 space-y-4">
             {[
               ['React application shell', 'Ready', 'good'],
               ['Responsive navigation', 'Ready', 'good'],
               ['Firebase authentication', 'Next phase', 'pending'],
-              ['Offline database & sync', 'Planned', 'pending'],
+              ['Cloud sync engine', 'Planned', 'pending'],
             ].map(([label, status, tone]) => (
               <div key={label} className="flex items-center justify-between gap-3">
                 <span className="text-sm text-slate-600">{label}</span>
@@ -90,17 +86,16 @@ export function Dashboard() {
           </div>
           <div className="mt-6 rounded-xl bg-slate-900 p-4 text-white">
             <div className="flex items-center gap-2 text-sm font-semibold"><RefreshCw size={15} /> Sync engine</div>
-            <p className="mt-1 text-xs leading-5 text-slate-300">Not connected yet. No transaction will be uploaded or changed in this preview.</p>
+            <p className="mt-1 text-xs leading-5 text-slate-300">Not connected yet. Local commands will be queued for a later secure cloud-sync phase.</p>
           </div>
         </section>
       </div>
 
+      <LocalDatabaseStatus />
+
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <div>
-            <h2 className="font-bold text-slate-900">Quick actions</h2>
-            <p className="mt-1 text-xs text-slate-500">Workflow entry points for the upcoming modules.</p>
-          </div>
+          <div><h2 className="font-bold text-slate-900">Quick actions</h2><p className="mt-1 text-xs text-slate-500">Workflow entry points for the upcoming modules.</p></div>
           <span className="text-[11px] font-medium text-slate-400">Preview only</span>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -109,10 +104,7 @@ export function Dashboard() {
             return (
               <div key={action.title} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/30">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700"><Icon size={18} /></span>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-800">{action.title}</p>
-                  <p className="mt-0.5 text-[11px] leading-4 text-slate-400">{action.description}</p>
-                </div>
+                <div className="min-w-0"><p className="text-sm font-bold text-slate-800">{action.title}</p><p className="mt-0.5 text-[11px] leading-4 text-slate-400">{action.description}</p></div>
                 <ArrowDownRight size={15} className="ml-auto shrink-0 rotate-[-45deg] text-slate-300" />
               </div>
             )
