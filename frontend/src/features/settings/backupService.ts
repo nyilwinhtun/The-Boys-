@@ -220,8 +220,18 @@ export async function restoreLocalBackup(snapshot: LocalBackupSnapshot): Promise
 
   await db.transaction(
     'rw',
-    db.products, db.variants, db.branches, db.warehouses, db.imeiUnits,
-    db.imeiRegistry, db.stockLedger, db.auditLogs, db.syncOutbox, db.appMeta,
+    [
+      db.products,
+      db.variants,
+      db.branches,
+      db.warehouses,
+      db.imeiUnits,
+      db.imeiRegistry,
+      db.stockLedger,
+      db.auditLogs,
+      db.syncOutbox,
+      db.appMeta,
+    ],
     async () => {
       await db.products.clear()
       await db.variants.clear()

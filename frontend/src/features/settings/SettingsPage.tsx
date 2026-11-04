@@ -23,7 +23,19 @@ const cardClass = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sh
 const buttonClass = 'inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50'
 const lightButtonClass = 'inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50'
 
-const countLabels: Array<[keyof LocalRecordCounts, string]> = [
+type LocalRecordCountKey =
+  | 'products'
+  | 'variants'
+  | 'branches'
+  | 'warehouses'
+  | 'imeiUnits'
+  | 'imeiRegistry'
+  | 'stockLedger'
+  | 'auditLogs'
+  | 'syncOutbox'
+  | 'appMeta'
+
+const countLabels: Array<[LocalRecordCountKey, string]> = [
   ['products', 'Products'],
   ['variants', 'Variants'],
   ['branches', 'Branches'],
@@ -195,9 +207,10 @@ export function SettingsPage() {
     }
   }
 
-  const totalRecords = counts
-    ? Object.values(counts).reduce((sum, count) => sum + count, 0)
-    : 0
+  const totalRecords = countLabels.reduce<number>(
+    (total, [key]) => total + (counts?.[key] ?? 0),
+    0,
+  )
 
   return (
     <div className="space-y-5">

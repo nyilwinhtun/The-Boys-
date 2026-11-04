@@ -9,6 +9,7 @@ import { StatusPill } from '../components/StatusPill'
 import { Dashboard } from '../features/dashboard/Dashboard'
 import { InventoryPage } from '../features/inventory/InventoryPage'
 import { WarehousePage } from '../features/warehouse/WarehousePage'
+import { SettingsPage } from '../features/settings/SettingsPage'
 import { LoginPreview } from '../features/auth/LoginPreview'
 import { ModulePlaceholder } from '../features/placeholder/ModulePlaceholder'
 
@@ -183,6 +184,8 @@ export default function App() {
               <InventoryPage />
             ) : activePage === 'warehouse' ? (
               <WarehousePage />
+            ) : activePage === 'settings' ? (
+              <SettingsPage />
             ) : (
               <ModulePlaceholder
                 title={selectedItem.label}
